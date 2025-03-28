@@ -1,0 +1,11 @@
+Model Information:
+* title:	Scifi - Sumurai Sword
+* source:	https://sketchfab.com/3d-models/scifi-sumurai-sword-88df4ba9b3c14919b288d71ce32b4014
+* author:	turn_ye (https://sketchfab.com/turn_ye)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Scifi - Sumurai Sword" (https://sketchfab.com/3d-models/scifi-sumurai-sword-88df4ba9b3c14919b288d71ce32b4014) by turn_ye (https://sketchfab.com/turn_ye) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,24 +1,34 @@
 precision mediump float;
 
+// Uniforms
 uniform sampler2D tDiffuse; // Textura renderizada
-uniform float threshold;     // Umbral de brillo
-uniform vec2 resolution;     // Resolución de la pantalla
-in vec2 vUv;                // Coordenadas UV
-out vec4 fragColor;         // Color de salida
+uniform vec2 resolution;    // Resolución de la pantalla
+uniform float intensity;    // Intensidad del Bloom
+
+// Varying
+in vec2 vUv; // Coordenadas UV
+
+// Output
+out vec4 fragColor; // Color de salida
 
 void main() {
-    // Usar la resolución para calcular las coordenadas UV
-    vec4 color = texture(tDiffuse, vUv); // Color original de la textura
+    // Obtener el color original del píxel
+    vec4 color = texture(tDiffuse, vUv);
 
-    // Calcular la luminancia
-    float brightness = dot(color.rgb, vec3(0.299, 0.587, 0.114)); // Luminancia
+    // Aplicar desenfoque a las áreas brillantes
+    vec4 blurredColor = vec4(0.0);
+    for (float x = -1.0; x <= 1.0; x++) {
+        for (float y = -1.0; y <= 1.0; y++) {
+            vec2 offset = vec2(x, y) / resolution; // Desplazamiento normalizado
+            blurredColor += texture(tDiffuse, vUv + offset);
+        }
+    }
+    blurredColor /= 9.0; // Normalizar el promedio de colores en el kernel
 
-    // Detectar áreas brillantes
-    vec4 bloomColor = brightness > threshold ? color : vec4(0.0); // Áreas brillantes
-
-    // Combina el color original con el Bloom
-    fragColor = color + bloomColor * 0.5; // Ajusta el efecto de Bloom
+    // Combina el color original con el Bloom desenfocado
+    fragColor = color + blurredColor * intensity;
 }
+
 
 
 

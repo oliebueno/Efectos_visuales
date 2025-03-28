@@ -1,12 +1,16 @@
 import * as THREE from 'three';
-import { GUI } from 'dat.gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
+
 
 import pp_vertex from './shaders/pp_vertex.glsl';
 import pp_fragment_bloom from './shaders/pp_frag_bloom.glsl';
+
+import { GUIManager } from './utils/GuiManager';
+import { ModelLoader } from './utils/MoldelLoader';
 
 export class MainApp {
   private scene: THREE.Scene;
@@ -15,7 +19,7 @@ export class MainApp {
   private composer: EffectComposer;
   private controls: OrbitControls;
   private bloomPass: ShaderPass;
-  private gui: GUI;
+  private guiManager: GUIManager;
 
   private cameraConfig = {
     fov: 75,
@@ -38,6 +42,12 @@ export class MainApp {
 
     this.camera.position.set(0, 0, 5);
 
+    const fxaaPass = new ShaderPass(FXAAShader);
+    fxaaPass.material.uniforms['resolution'].value.set(
+        1 / window.innerWidth,
+        1 / window.innerHeight
+    );
+    
     // Configuración del renderizador
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -53,17 +63,15 @@ export class MainApp {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
 
-    const geometry = new THREE.SphereGeometry(1, 64, 64);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x808080,
-      emissive: 0x5555ff,
-      emissiveIntensity: 1.0,
+    // Cargar el modelo 3D utilizando ModelLoader
+    ModelLoader.loadModel('./static/models/sumurai_sword/scene.gltf', (model) => {
+      model.scale.set(15, 15, 15); // Ajusta el tamaño del modelo
+      model.position.set(0, 0, 0); // Ajusta su posición inicial en la escena
+      this.scene.add(model); // Agrega el modelo a la escena
     });
-    const sphere = new THREE.Mesh(geometry, material);
-    this.scene.add(sphere);
 
     const pointLight = new THREE.PointLight(0xffffff, 100);
-    pointLight.position.set(5, 5, 5);
+    pointLight.position.set(10, 10, 10);
     this.scene.add(pointLight);
 
     const ambientLight = new THREE.AmbientLight(0x404040);
@@ -78,7 +86,7 @@ export class MainApp {
       new THREE.RawShaderMaterial({
         uniforms: {
           tDiffuse: { value: null }, // Textura renderizada
-          threshold: { value: 0.8 }, // Umbral inicial
+          intensity: { value: 1}, // Intensidad
           resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución de la pantalla
         },
         vertexShader: pp_vertex, // El shader de vértices básico que ya tienes
@@ -88,17 +96,10 @@ export class MainApp {
     );
     
     this.composer.addPass(this.bloomPass); // Agrega el Bloom al compositor
+    this.composer.addPass(fxaaPass); // Mejora la resolución
     
-    // **Configurar dat.GUI para el control de threshold**
-    this.gui = new GUI();
-    const bloomFolder = this.gui.addFolder('Bloom Effect');
-    const bloomSettings = { threshold: 0.8 }; // Configuración inicial
-
-    bloomFolder.add(bloomSettings, 'threshold', 0.0, 1.0).onChange((value) => {
-        this.bloomPass.material.uniforms.threshold.value = value; // Vincula el valor de la GUI al shader
-    });
-
-    bloomFolder.open(); // Abre la carpeta
+    // Se inicializa la gui
+    this.guiManager = new GUIManager(this.bloomPass);
 
     // Manejar eventos de redimensionamiento
     window.addEventListener('resize', () => this.onWindowResize());
