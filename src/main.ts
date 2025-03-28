@@ -40,7 +40,7 @@ export class MainApp {
       this.cameraConfig.far
     );
 
-    this.camera.position.set(0, 0, 5);
+    this.camera.position.set(0, 20, 200);
 
     const fxaaPass = new ShaderPass(FXAAShader);
     fxaaPass.material.uniforms['resolution'].value.set(
@@ -64,8 +64,8 @@ export class MainApp {
     this.controls.enableDamping = true;
 
     // Cargar el modelo 3D utilizando ModelLoader
-    ModelLoader.loadModel('./static/models/sumurai_sword/scene.gltf', (model) => {
-      model.scale.set(15, 15, 15); // Ajusta el tamaño del modelo
+    ModelLoader.loadModel('./static/models/downtown-echo/source/echo.glb', (model) => {
+      model.scale.set(1, 1, 1); // Ajusta el tamaño del modelo
       model.position.set(0, 0, 0); // Ajusta su posición inicial en la escena
       this.scene.add(model); // Agrega el modelo a la escena
     });
@@ -74,7 +74,7 @@ export class MainApp {
     pointLight.position.set(10, 10, 10);
     this.scene.add(pointLight);
 
-    const ambientLight = new THREE.AmbientLight(0x404040);
+    const ambientLight = new THREE.AmbientLight(0x404040,100);
     this.scene.add(ambientLight);
 
     // Crear el post-procesamiento
@@ -87,6 +87,7 @@ export class MainApp {
         uniforms: {
           tDiffuse: { value: null }, // Textura renderizada
           intensity: { value: 1}, // Intensidad
+          threshold: { value: 0.8 }, // Umbral inicial
           resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución de la pantalla
         },
         vertexShader: pp_vertex, // El shader de vértices básico que ya tienes

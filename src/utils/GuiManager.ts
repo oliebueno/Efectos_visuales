@@ -12,14 +12,20 @@ export class GUIManager {
 
         // Configuración inicial
         const bloomSettings = {
+            threshold: bloomPass.material.uniforms.threshold.value,
             intensity: bloomPass.material.uniforms.intensity.value,
         };
+
+        // Control del umbral
+        bloomFolder.add(bloomSettings, 'threshold', 0.0, 1.0).onChange((value) => {
+            bloomPass.material.uniforms.threshold.value = value;
+        });
 
         // Control de la intensidad
         bloomFolder.add(bloomSettings, 'intensity', 0.0, 5.0).onChange((value) => {
             bloomPass.material.uniforms.intensity.value = value;
         });
 
-        bloomFolder.open();
+        bloomFolder.open(); // Abre la carpeta por defecto
     }
 }
