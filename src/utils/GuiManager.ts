@@ -4,7 +4,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 export class GUIManager {
     private gui: GUI;
 
-    constructor(bloomPass: ShaderPass) {
+    constructor(bloomPass: ShaderPass, nightVisionPass: ShaderPass) {
         this.gui = new GUI();
 
         // Carpeta para los efectos Bloom
@@ -27,5 +27,27 @@ export class GUIManager {
         });
 
         bloomFolder.open(); // Abre la carpeta por defecto
+
+        const nightVisionFolder = this.gui.addFolder('Night Vision');
+        const nightVisionSettings = {
+            enabled: nightVisionPass.enabled,
+            noiseIntensity: nightVisionPass.material.uniforms.noiseIntensity.value,
+            contrast: nightVisionPass.material.uniforms.contrast.value,
+        };
+
+        // Controles para Visión Nocturna
+        nightVisionFolder.add(nightVisionSettings, 'enabled').onChange((value) => {
+            nightVisionPass.enabled = value;
+        });
+
+        nightVisionFolder.add(nightVisionSettings, 'noiseIntensity', 0.0, 1.0).onChange((value) => {
+            nightVisionPass.material.uniforms.noiseIntensity.value = value;
+        });
+
+        nightVisionFolder.add(nightVisionSettings, 'contrast', 1.0, 3.0).onChange((value) => {
+            nightVisionPass.material.uniforms.contrast.value = value;
+        });
+
+        nightVisionFolder.open();
     }
 }
