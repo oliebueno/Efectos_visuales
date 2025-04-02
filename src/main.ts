@@ -8,6 +8,7 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 import pp_vertex from './shaders/pp_vertex.glsl';
 import pp_fragment_bloom from './shaders/pp_frag_bloom.glsl';
+import pp_fragment_disp from './shaders/pp_frag_disp.glsl';
 
 import { GUIManager } from './utils/GuiManager';
 import { ModelLoader } from './utils/MoldelLoader';
@@ -19,6 +20,7 @@ export class MainApp {
   private composer: EffectComposer;
   private controls: OrbitControls;
   private bloomPass: ShaderPass;
+  private dispersionPass: ShaderPass;
   private guiManager: GUIManager;
 
   private cameraConfig = {
@@ -63,21 +65,21 @@ export class MainApp {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
 
-    // Cargar el modelo 3D utilizando ModelLoader
+    // Cargar el modelo 3D
     ModelLoader.loadModel('./static/models/downtown-echo/source/echo.glb', (model) => {
-      model.scale.set(1, 1, 1); // Ajusta el tamaño del modelo
-      model.position.set(0, 0, 0); // Ajusta su posición inicial en la escena
-      this.scene.add(model); // Agrega el modelo a la escena
+      model.scale.set(1, 1, 1);
+      model.position.set(0, 0, 0);
+      this.scene.add(model);
     });
 
     const pointLight = new THREE.PointLight(0xffffff, 100);
     pointLight.position.set(10, 10, 10);
     this.scene.add(pointLight);
 
-    const ambientLight = new THREE.AmbientLight(0x404040,100);
+    const ambientLight = new THREE.AmbientLight(0x404040, 75.0);
     this.scene.add(ambientLight);
 
-    // Crear el post-procesamiento
+    // Crear el post-procesamiento ----------------------------------------------------------------
     this.composer = new EffectComposer(this.renderer);
     const renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(renderPass);
@@ -90,17 +92,32 @@ export class MainApp {
           threshold: { value: 0.8 }, // Umbral inicial
           resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución de la pantalla
         },
-        vertexShader: pp_vertex, // El shader de vértices básico que ya tienes
-        fragmentShader: pp_fragment_bloom, // Este es el nuevo fragment shader para Bloom
+        vertexShader: pp_vertex, 
+        fragmentShader: pp_fragment_bloom,
         glslVersion: THREE.GLSL3,
       })
     );
+
+    this.dispersionPass = new ShaderPass(
+      new THREE.RawShaderMaterial({
+          uniforms: {
+              tDiffuse: { value: null }, // Textura renderizada
+              dispersion: { value: 0.0 }, // Nivel inicial de dispersión
+              resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }, // Resolución
+          },
+          vertexShader: pp_vertex,
+          fragmentShader: pp_fragment_disp,
+          glslVersion: THREE.GLSL3,
+      })
+  );
+  
     
-    this.composer.addPass(this.bloomPass); // Agrega el Bloom al compositor
+    this.composer.addPass(this.bloomPass); // Agrega el Bloom al composser
+    this.composer.addPass(this.dispersionPass);
     this.composer.addPass(fxaaPass); // Mejora la resolución
     
     // Se inicializa la gui
-    this.guiManager = new GUIManager(this.bloomPass);
+    this.guiManager = new GUIManager(this.bloomPass, this.dispersionPass, ambientLight);
 
     // Manejar eventos de redimensionamiento
     window.addEventListener('resize', () => this.onWindowResize());

@@ -8,7 +8,7 @@ export class ModelLoader {
             path,
             (gltf) => {
                 const model = gltf.scene;
-                onLoadCallback(model); // Envía el modelo cargado al callback
+                onLoadCallback(model);
             },
             (xhr) => {
                 console.log((xhr.loaded / xhr.total) * 100 + '% cargado');

@@ -33,7 +33,7 @@ void main() {
     blurredColor /= 9.0; // Normalizar el promedio del kernel
 
     // Combina el color original con el Bloom desenfocado
-    fragColor = color + blurredColor * intensity; // Ajusta el impacto del Bloom
+    fragColor = color + blurredColor * intensity;
 }
 
 
