@@ -5,7 +5,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 export class GUIManager {
     private gui: GUI;
 
-    constructor(bloomPass: ShaderPass, dispersionPass: ShaderPass, ambientLight: THREE.AmbientLight) {
+    constructor(bloomPass: ShaderPass, dispersionPass: ShaderPass, nightVisionPass:ShaderPass, ambientLight: THREE.AmbientLight) {
         this.gui = new GUI();
 
         // Carpeta para los efectos Bloom
@@ -40,6 +40,31 @@ export class GUIManager {
             ambientLight.intensity = value;
         });
 
+        // Controles para Visión Nocturna
+        const nightVisionFolder = this.gui.addFolder('Night Vision');
+        const nightVisionSettings = {
+            enabled: false,
+            noiseIntensity: nightVisionPass.material.uniforms.noiseIntensity.value,
+            contrast: nightVisionPass.material.uniforms.contrast.value,
+        };
+
+        nightVisionPass.enabled = nightVisionSettings.enabled;
+
+        nightVisionFolder.add(nightVisionSettings, 'enabled').onChange((value) => {
+            nightVisionPass.enabled = value;
+            
+        });
+
+        nightVisionFolder.add(nightVisionSettings, 'noiseIntensity', 0.0, 1.0).onChange((value) => {
+            nightVisionPass.material.uniforms.noiseIntensity.value = value;
+        });
+
+        nightVisionFolder.add(nightVisionSettings, 'contrast', 1.0, 3.0).onChange((value) => {
+            nightVisionPass.material.uniforms.contrast.value = value;
+        });
+
+
+        nightVisionFolder.open();
         bloomFolder.open();
         lightFolder.open();
     }

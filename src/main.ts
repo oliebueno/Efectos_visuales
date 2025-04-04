@@ -13,6 +13,7 @@ import pp_fragment_nightvision from './shaders/pp_frag_nightvision.glsl';
 
 import { GUIManager } from './utils/GuiManager';
 import { ModelLoader } from './utils/MoldelLoader';
+import { SimpleModelLoader } from './utils/ModelSimpleLoader';
 
 export class MainApp {
   private scene: THREE.Scene;
@@ -24,13 +25,15 @@ export class MainApp {
   private dispersionPass: ShaderPass;
   private nightVisionPass: ShaderPass;
   private guiManager: GUIManager;
+  private clock = new THREE.Clock();
+  private mixers: THREE.AnimationMixer[] = [];
   private time = 0;
 
   private cameraConfig = {
     fov: 75,
     aspect: window.innerWidth / window.innerHeight,
     near: 0.1,
-    far: 1000,
+    far: 100000,
   }
 
   constructor() {
@@ -68,19 +71,79 @@ export class MainApp {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
 
-    // Cargar el modelo 3D
-    ModelLoader.loadModel('./static/models/downtown-echo/source/echo.glb', (model) => {
+    // Luces
+    // Crear una luz direccional
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5); // Luz blanca con intensidad 1.5
+    directionalLight.position.set(50, 50, 50); // Configura la posición de la luz
+    directionalLight.target.position.set(39, 6, 30); // Apunta la luz hacia el modelo 'huracan'
+
+    // Agregar la luz y su objetivo a la escena
+    this.scene.add(directionalLight);
+    this.scene.add(directionalLight.target);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 75.0);
+    this.scene.add(ambientLight);
+
+    // Cargar el modelos 3D ---------------------------------------------------------------------
+
+    // Ciudad
+    SimpleModelLoader.loadModel('./static/models/huracan.glb', (model) => {
+      model.scale.set(2, 2, 2);
+      model.position.set(39, 6, 30);
+      this.scene.add(model);
+    });
+
+    // Huracan car estatico 
+    SimpleModelLoader.loadModel('./static/models/downtown-echo/source/echo.glb', (model) => {
       model.scale.set(1, 1, 1);
       model.position.set(0, 0, 0);
       this.scene.add(model);
     });
 
-    const pointLight = new THREE.PointLight(0xffffff, 100);
-    pointLight.position.set(10, 10, 10);
-    this.scene.add(pointLight);
+    // Skybox
+    SimpleModelLoader.loadModel('./static/models/panorama.glb', (model) => {
+      model.scale.set(700, 700, 700);
+      model.position.set(0, 0, 0);
+      this.scene.add(model);
+    });
 
-    const ambientLight = new THREE.AmbientLight(0x404040, 75.0);
-    this.scene.add(ambientLight);
+    // Personaje bailando
+    ModelLoader.loadModel('./static/models/rumba.glb', (gltf) => {
+      const model = gltf.scene; 
+      const mixer = new THREE.AnimationMixer(model);
+  
+      model.scale.set(3, 3, 3);
+      model.position.set(-25, 4.3, 30); 
+  
+      // Reproducir animaciones si existen
+      if (gltf.animations && gltf.animations.length > 0) {
+          console.log('Animaciones cargadas:', gltf.animations);
+          const action = mixer.clipAction(gltf.animations[0]);
+          action.play(); 
+      }
+      this.mixers.push(mixer);
+      this.scene.add(model); 
+    });
+
+    
+    // carro 1
+    ModelLoader.loadModel('./static/models/car1.glb', (gltf) => {
+      const model = gltf.scene; 
+      const mixer = new THREE.AnimationMixer(model);
+  
+      model.scale.set(3, 3, 3);
+      model.position.set(-30, 4.3, 44);
+      model.rotation.y = Math.PI / 2;
+  
+      // Reproducir animaciones si existen
+      if (gltf.animations && gltf.animations.length > 0) {
+          console.log('Animaciones cargadas:', gltf.animations);
+          const action = mixer.clipAction(gltf.animations[0]);
+          action.play(); 
+      }
+      this.mixers.push(mixer);
+      this.scene.add(model); 
+    });
 
     // Crear el post-procesamiento ----------------------------------------------------------------
     this.composer = new EffectComposer(this.renderer);
@@ -114,7 +177,6 @@ export class MainApp {
       })
   );
 
-    // Nuevo Night Vision Pass
     this.nightVisionPass = new ShaderPass(
       new THREE.RawShaderMaterial({
         uniforms: {
@@ -136,7 +198,7 @@ export class MainApp {
     this.composer.addPass(fxaaPass); // Mejora la resolución
     
     // Se inicializa la gui
-    this.guiManager = new GUIManager(this.bloomPass, this.dispersionPass, ambientLight);
+    this.guiManager = new GUIManager(this.bloomPass, this.dispersionPass, this.nightVisionPass, ambientLight);
 
     // Manejar eventos de redimensionamiento
     window.addEventListener('resize', () => this.onWindowResize());
@@ -145,7 +207,6 @@ export class MainApp {
     this.animate();
   }
 
-  
   private onWindowResize(): void {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -157,9 +218,13 @@ export class MainApp {
 
   private animate(): void {
     requestAnimationFrame(() => this.animate());
-    this.controls.update(); // Mantén el movimiento de la cámara fluido
-    this.composer.render(); // Renderiza con EffectComposer
+    this.controls.update();
+    this.composer.render(); 
 
+    const delta = this.clock.getDelta();
+
+    this.mixers.forEach((mixer) => mixer.update(delta));
+    this.nightVisionPass.material.uniforms.time.value += delta;
   }
 }
 
