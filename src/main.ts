@@ -9,6 +9,7 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import pp_vertex from './shaders/pp_vertex.glsl';
 import pp_fragment_bloom from './shaders/pp_frag_bloom.glsl';
 import pp_fragment_disp from './shaders/pp_frag_disp.glsl';
+import pp_fragment_nightvision from './shaders/pp_frag_nightvision.glsl';
 
 import { GUIManager } from './utils/GuiManager';
 import { ModelLoader } from './utils/MoldelLoader';
@@ -21,7 +22,9 @@ export class MainApp {
   private controls: OrbitControls;
   private bloomPass: ShaderPass;
   private dispersionPass: ShaderPass;
+  private nightVisionPass: ShaderPass;
   private guiManager: GUIManager;
+  private time = 0;
 
   private cameraConfig = {
     fov: 75,
@@ -110,10 +113,26 @@ export class MainApp {
           glslVersion: THREE.GLSL3,
       })
   );
+
+    // Nuevo Night Vision Pass
+    this.nightVisionPass = new ShaderPass(
+      new THREE.RawShaderMaterial({
+        uniforms: {
+          tDiffuse: { value: null },
+          noiseIntensity: { value: 0.5 },
+          contrast: { value: 1.5 },
+          time: { value: 0 },
+        },
+        vertexShader: pp_vertex,
+        fragmentShader: pp_fragment_nightvision,
+        glslVersion: THREE.GLSL3,
+      })
+    );
   
     
     this.composer.addPass(this.bloomPass); // Agrega el Bloom al composser
-    this.composer.addPass(this.dispersionPass);
+    this.composer.addPass(this.dispersionPass); // Agrega la difusión al composser
+    this.composer.addPass(this.nightVisionPass); // Agrega el efecto de visión nocturna al composser
     this.composer.addPass(fxaaPass); // Mejora la resolución
     
     // Se inicializa la gui
